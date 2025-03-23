@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EXIF Data Example</title>
+  <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+</head>
+<body>
+<input type="file" id="imageInput" accept="image/*">
+<pre id="exifData"></pre>
+
+<script>
+  // delete one long EXIF node
+  function replacer(key, value) {
+    if (key === "MakerNote") {
+      return undefined;
+    }
+    return value;
+  }
+
+  document.getElementById('imageInput').addEventListener('change', function (event) {
+    const file = event.target.files[0];
+    if (file) {
+      EXIF.getData(file, function () {
+        let exif = EXIF.getAllTags(this);
+        document.getElementById('exifData').textContent = JSON.stringify(exif, replacer, 2);
+
+        // Modify EXIF data (example: change the description)
+        exif.ImageDescription = 'Modified by JavaScript';
+        EXIF.setData(file, exif, function () {
+          console.log('EXIF data modified:', EXIF.getAllTags(this));
+        });
+      });
+    }
+  });
+</script>
+</body>
+</html>

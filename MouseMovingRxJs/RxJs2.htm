@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RxJS Mouse Movement with Bubbles</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        #container {
+            position: relative;
+            display: inline-block;
+        }
+        #image {
+            display: block;
+        }
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none; /* Ensure bubbles don't interfere with mouse events */
+            animation: fadeOut 1s ease-out forwards; /* Fade-out animation */
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <img id="image" src="http://localhost:3000/images/Frontend.png" alt="Image" crossorigin="anonymous">
+</div>
+
+<!-- Include RxJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/rxjs/7.8.0/rxjs.umd.min.js"></script>
+<script>
+    const { fromEvent } = rxjs;
+    const { map, throttleTime } = rxjs.operators;
+
+    const container = document.getElementById('container');
+    const image = document.getElementById('image');
+
+    // Create an observable for mouse movement
+    const mouseMove$ = fromEvent(container, 'mousemove').pipe(
+        throttleTime(100) // Throttle to avoid too many events
+    );
+
+    // Subscribe to mouse movement
+    mouseMove$.subscribe(event => {
+        const { offsetX, offsetY } = event;
+
+        // Create a bubble with random radius and color
+        const bubble = document.createElement('div');
+        bubble.classList.add('bubble');
+
+        const radius = Math.floor(Math.random() * 50 + 10); // Random radius between 10 and 60
+        const color = `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.7)`;
+
+        bubble.style.width = `${radius * 2}px`;
+        bubble.style.height = `${radius * 2}px`;
+        bubble.style.backgroundColor = color;
+        bubble.style.left = `${offsetX - radius}px`;
+        bubble.style.top = `${offsetY - radius}px`;
+
+        // Add the bubble to the container
+        container.appendChild(bubble);
+
+        // Remove the bubble after 1 second (handled by CSS animation)
+    });
+</script>
+</body>
+</html>

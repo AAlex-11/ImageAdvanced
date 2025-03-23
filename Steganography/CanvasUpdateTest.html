@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steganography Example</title>
+  <style>
+    #retrievedText {
+      margin-left: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<h1>Steganography Example</h1>
+<input type="file" id="imageInput" accept="image/*">
+<input type="text" id="secretText" placeholder="Enter text to hide">
+<button id="hideText">Hide Text</button>
+<button id="showText">Show Text</button>
+<span id="retrievedText" style="display: none;"></span>
+<canvas id="canvas" style="display: none;"></canvas>
+<img id="output" src="#" alt="Output" style="display: none; max-width: 100%;">
+
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  // Function to hide text in the image
+  document.getElementById('hideText').addEventListener('click', function () {
+    const file = document.getElementById('imageInput').files[0];
+    const secretText = document.getElementById('secretText').value;
+
+    if (file && secretText) {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = function () {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        // Convert text to binary
+        const binaryText = secretText.split('').map(char => char.charCodeAt(0).toString(2).padStart(8, '0')).join('');
+        console.log("Binary Text to Hide:", binaryText);
+
+        // Store the length of the hidden message (in bits) in the first 16 pixels (16 bits)
+        const lengthBinary = binaryText.length.toString(2).padStart(16, '0');
+        console.log("Length Binary:", lengthBinary);
+        for (let i = 0; i < 16; i++) {
+          const bit = lengthBinary[i];
+          const pixelIndex = i * 4; // Access the red channel (R) of each pixel
+          data[pixelIndex] = (data[pixelIndex] & 0xFE) | parseInt(bit, 2); // Modify LSB of the red channel
+          console.log(`Storing Length - Pixel ${i}: ${data[pixelIndex].toString(2).padStart(8, '0')} Bit: ${bit}`);
+        }
+
+        // Hide the actual text in the LSB of the red channel
+        for (let i = 0; i < binaryText.length; i++) {
+          const bit = binaryText[i];
+          const pixelIndex = (i + 16) * 4; // Start after the length bits, access the red channel (R)
+          data[pixelIndex] = (data[pixelIndex] & 0xFE) | parseInt(bit, 2); // Modify LSB of the red channel
+          console.log(`Hiding Data - Pixel ${i + 16}: ${data[pixelIndex].toString(2).padStart(8, '0')} Bit: ${bit}`);
+        }
+
+        // Update the canvas with the modified image data
+        ctx.putImageData(imageData, 0, 0);
+
+        // Display the modified image
+        const output = document.getElementById('output');
+        output.src = canvas.toDataURL();
+        output.style.display = 'block';
+      };
+    } else {
+      alert("Please select an image and enter text to hide.");
+    }
+  });
+
+  // Function to show hidden text from the image
+  document.getElementById('showText').addEventListener('click', function () {
+    const file = document.getElementById('imageInput').files[0];
+
+    if (file) {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = function () {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        // Read the length of the hidden message (first 16 bits)
+        let lengthBinary = '';
+        for (let i = 0; i < 16; i++) {
+          const pixelIndex = i * 4; // Access the red channel (R) of each pixel
+          const bit = data[pixelIndex] & 1; // Extract LSB of the red channel
+          lengthBinary += bit.toString();
+          console.log(`Reading Length - Pixel ${i}: ${data[pixelIndex].toString(2).padStart(8, '0')} Bit: ${bit}`);
+        }
+        const length = parseInt(lengthBinary, 2);
+        console.log("Retrieved Length (Binary):", lengthBinary);
+        console.log("Retrieved Length (Decimal):", length);
+
+        // Read the hidden text based on the length
+        let binaryText = '';
+        for (let i = 0; i < length; i++) {
+          const pixelIndex = (i + 16) * 4; // Start after the length bits, access the red channel (R)
+          const bit = data[pixelIndex] & 1; // Extract LSB of the red channel
+          binaryText += bit.toString();
+          console.log(`Reading Data - Pixel ${i + 16}: ${data[pixelIndex].toString(2).padStart(8, '0')} Bit: ${bit}`);
+        }
+        console.log("Retrieved Binary Text:", binaryText);
+
+        // Convert binary to text
+        let text = '';
+        for (let i = 0; i < binaryText.length; i += 8) {
+          const byte = binaryText.substr(i, 8);
+          text += String.fromCharCode(parseInt(byte, 2));
+        }
+        console.log("Retrieved Text:", text);
+
+        // Display the retrieved text
+        const retrievedText = document.getElementById('retrievedText');
+        retrievedText.textContent = "Retrieved Text: " + text;
+        retrievedText.style.display = 'inline';
+      };
+    } else {
+      alert("Please select an image to retrieve hidden text.");
+    }
+  });
+</script>
+</body>
+</html>

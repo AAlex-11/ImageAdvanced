@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steganography Length Test</title>
+</head>
+<body>
+<h1>Steganography Length Test</h1>
+<input type="file" id="imageInput" accept="image/*">
+<button id="testLength">Test Length</button>
+<canvas id="canvas" style="display: none;"></canvas>
+
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  // Function to test length storage and retrieval
+  document.getElementById('testLength').addEventListener('click', function () {
+    const file = document.getElementById('imageInput').files[0];
+
+    if (file) {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = function () {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        // Fixed length to store (40 bits)
+        const lengthToStore = 40;
+        const lengthBinary = lengthToStore.toString(2).padStart(16, '0');
+        console.log("Length to Store (Binary):", lengthBinary);
+
+        // Store the length in the first 16 pixels (red channel)
+        for (let i = 0; i < 16; i++) {
+          const bit = lengthBinary[i];
+          const pixelIndex = i * 4; // Access the red channel (R) of each pixel
+          data[pixelIndex] = (data[pixelIndex] & 0xFE) | parseInt(bit, 2); // Modify LSB of the red channel
+          console.log(`Storing Length - Pixel ${i}: ${data[pixelIndex].toString(2).padStart(8, '0')} Bit: ${bit}`);
+        }
+
+        // Read the length from the first 16 pixels (red channel)
+        let retrievedLengthBinary = '';
+        for (let i = 0; i < 16; i++) {
+          const pixelIndex = i * 4; // Access the red channel (R) of each pixel
+          const bit = data[pixelIndex] & 1; // Extract LSB of the red channel
+          retrievedLengthBinary += bit.toString();
+          console.log(`Reading Length - Pixel ${i}: ${data[pixelIndex].toString(2).padStart(8, '0')} Bit: ${bit}`);
+        }
+        const retrievedLength = parseInt(retrievedLengthBinary, 2);
+        console.log("Retrieved Length (Binary):", retrievedLengthBinary);
+        console.log("Retrieved Length (Decimal):", retrievedLength);
+
+        // Verify if the retrieved length matches the stored length
+        if (retrievedLength === lengthToStore) {
+          console.log("Test Passed: Retrieved length matches stored length.");
+        } else {
+          console.error("Test Failed: Retrieved length does not match stored length.");
+        }
+      };
+    } else {
+      alert("Please select an image to test length storage and retrieval.");
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tesseract.js Example</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
+</head>
+<body>
+<h3>Tesseract.js Text Recognition</h3>
+<input type="file" id="imageInput" accept="image/*">
+<pre id="output">Results will appear here...</pre>
+
+<script>
+  document.getElementById('imageInput').addEventListener('change', function (event) {
+    const file = event.target.files[0];
+    if (file) {
+      const output = document.getElementById('output');
+      output.textContent = 'Processing...';
+
+      Tesseract.recognize(
+              file,
+              'eng', // Language (English)
+              {
+                logger: m => console.log(m), // Log progress
+              }
+      )
+              .then(result => {
+                console.log(result); // Log the entire result object
+                if (result && result.data && result.data.text) {
+                  output.textContent = result.data.text; // Access text from result.data
+                } else {
+                  output.textContent = 'No text detected or result is undefined.';
+                }
+              })
+              .catch(error => {
+                output.textContent = 'Error: ' + error.message;
+                console.error('Error:', error);
+              });
+    }
+  });
+</script>
+</body>
+</html>

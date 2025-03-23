@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drag-and-Drop Image Upload</title>
+  <style>
+    #dropZone {
+      width: 300px;
+      height: 200px;
+      border: 2px dashed #ccc;
+      text-align: center;
+      line-height: 200px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+<div id="dropZone">Drop an image here</div>
+<img id="preview" src="#" alt="Preview" style="display: none; max-width: 100%; margin-top:10px" />
+
+<script>
+  const dropZone = document.getElementById('dropZone');
+  const preview = document.getElementById('preview');
+
+  dropZone.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    dropZone.style.borderColor = 'blue';
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.style.borderColor = '#ccc';
+  });
+
+  dropZone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    dropZone.style.borderColor = '#ccc';
+
+    const file = event.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+</script>
+</body>
+</html>

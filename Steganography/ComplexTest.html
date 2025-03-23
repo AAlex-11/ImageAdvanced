@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steganography Message Test</title>
+</head>
+<body>
+<h1>Steganography Message Test</h1>
+<input type="file" id="imageInput" accept="image/*">
+<input type="text" id="secretText" placeholder="Enter text to hide">
+<button id="testMessage">Hide text</button>
+<canvas id="canvas" style="display: none;"></canvas>
+<p id="retrievedText" style="display: none;"></p>
+<img id="output" src="#" alt="Output" style="display: none; max-width: 100%;">
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Function to test message storage and retrieval
+    document.getElementById('testMessage').addEventListener('click', function () {
+        const file = document.getElementById('imageInput').files[0];
+
+        if (file) {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = function () {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+
+                const messageToStore = document.getElementById('secretText').value;
+                const binaryText = messageToStore.split('').map(char => char.charCodeAt(0).toString(2).padStart(8, '0')).join('');
+                console.log("Message to Store (Binary):", binaryText);
+
+                // Store the length of the message (in bits) in the first 16 pixels (16 bits)
+                const lengthBinary = binaryText.length.toString(2).padStart(16, '0');
+                console.log("Length Binary:", lengthBinary);
+                for (let i = 0; i < 16; i++) {
+                    const bit = lengthBinary[i];
+                    const pixelIndex = i * 4; // Access the red channel (R) of each pixel
+                    data[pixelIndex] = (data[pixelIndex] & 0xFE) | parseInt(bit, 2); // Modify LSB of the red channel
+                    console.log(`Storing Length - Pixel ${i}: ${data[pixelIndex].toString(2).padStart(8, '0')} Bit: ${bit}`);
+                }
+
+                // Hide the actual message in the LSB of the red channel
+                for (let i = 0; i < binaryText.length; i++) {
+                    const bit = binaryText[i];
+                    const pixelIndex = (i + 16) * 4; // Start after the length bits, access the red channel (R)
+                    data[pixelIndex] = (data[pixelIndex] & 0xFE) | parseInt(bit, 2); // Modify LSB of the red channel
+                    console.log(`Hiding Data - Pixel ${i + 16}: ${data[pixelIndex].toString(2).padStart(8, '0')} Bit: ${bit}`);
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+
+                // Read the length of the hidden message (first 16 bits)
+                let retrievedLengthBinary = '';
+                for (let i = 0; i < 16; i++) {
+                    const pixelIndex = i * 4; // Access the red channel (R) of each pixel
+                    const bit = data[pixelIndex] & 1; // Extract LSB of the red channel
+                    retrievedLengthBinary += bit.toString();
+                    console.log(`Reading Length - Pixel ${i}: ${data[pixelIndex].toString(2).padStart(8, '0')} Bit: ${bit}`);
+                }
+                const retrievedLength = parseInt(retrievedLengthBinary, 2);
+                console.log("Retrieved Length (Binary):", retrievedLengthBinary);
+                console.log("Retrieved Length (Decimal):", retrievedLength);
+
+                // Read the hidden message based on the length
+                let retrievedBinaryText = '';
+                for (let i = 0; i < retrievedLength; i++) {
+                    const pixelIndex = (i + 16) * 4; // Start after the length bits, access the red channel (R)
+                    const bit = data[pixelIndex] & 1; // Extract LSB of the red channel
+                    retrievedBinaryText += bit.toString();
+                    console.log(`Reading Data - Pixel ${i + 16}: ${data[pixelIndex].toString(2).padStart(8, '0')} Bit: ${bit}`);
+                }
+                console.log("Retrieved Binary Text:", retrievedBinaryText);
+
+                // Convert binary to text
+                let retrievedText = '';
+                for (let i = 0; i < retrievedBinaryText.length; i += 8) {
+                    const byte = retrievedBinaryText.substr(i, 8);
+                    retrievedText += String.fromCharCode(parseInt(byte, 2));
+                }
+                console.log("Hidden Text:", retrievedText);
+
+                // Display the retrieved text
+                const retrievedTextElement = document.getElementById('retrievedText');
+                retrievedTextElement.textContent = "Hidden Text: " + retrievedText;
+                retrievedTextElement.style.display = 'block';
+
+                // Verify if the retrieved message matches the stored message
+                if (retrievedText === messageToStore) {
+                    console.log("Test Passed: Retrieved message matches stored message.");
+                } else {
+                    console.error("Test Failed: Retrieved message does not match stored message.");
+                }
+
+                // Display the modified image
+                const output = document.getElementById('output');
+                output.src = canvas.toDataURL();
+                output.style.display = 'block';
+            };
+        } else {
+            alert("Please select an image to test message storage and retrieval.");
+        }
+    });
+</script>
+</body>
+</html>

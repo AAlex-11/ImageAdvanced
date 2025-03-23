@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Watermark Example</title>
+  <style>
+    canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+<img id="sourceImage" src="http://localhost:3000/image/" alt="Source Image" style="display:none;">
+<canvas id="watermarkCanvas" width="800" height="600"></canvas>
+
+<script>
+  // Wait for the image to load
+  const img = document.getElementById('sourceImage');
+  img.onload = function() {
+    const canvas = document.getElementById('watermarkCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Set canvas dimensions to match the image
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    // Draw the image on the canvas
+    ctx.drawImage(img, 10, 0);
+
+    // Add watermark
+    ctx.font = '20px Arial';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; // Semi-transparent white
+    ctx.fillRect(10, 10, 150, 150); // Background for watermark
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // Semi-transparent black
+    ctx.fillText('Watermark', 30, 100); // Watermark text
+  };
+
+  // Load the image
+  img.src = 'http://localhost:3000/image/';
+</script>
+</body>
+</html>

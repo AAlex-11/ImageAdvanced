@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Histogram Example</title>
+  <style>
+    canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+<canvas id="histogramCanvas" width="600" height="400"></canvas>
+
+<script>
+  // Sample data
+  const data = [10, 20, 15, 35, 25, 30, 40, 50, 45, 20, 10, 5];
+
+  // Canvas setup
+  const canvas = document.getElementById('histogramCanvas');
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+  const barWidth = 40;
+  const gap = 10;
+  const maxDataValue = Math.max(...data);
+
+  // Function to draw the histogram
+  function drawHistogram() {
+    ctx.clearRect(0, 0, width, height);
+
+    data.forEach((value, index) => {
+      const barHeight = (value / maxDataValue) * (height - 50);
+      const x = index * (barWidth + gap) + 50;
+      const y = height - barHeight - 20;
+
+      ctx.fillStyle = 'blue';
+      ctx.fillRect(x, y, barWidth, barHeight);
+
+      ctx.fillStyle = 'black';
+      ctx.fillText(value, x + barWidth / 2 - 5, y - 5);
+    });
+
+    // Draw axes
+    ctx.beginPath();
+    ctx.moveTo(40, height - 20);
+    ctx.lineTo(width, height - 20);
+    ctx.moveTo(40, height - 20);
+    ctx.lineTo(40, 20);
+    ctx.strokeStyle = 'black';
+    ctx.stroke();
+  }
+
+  drawHistogram();
+</script>
+</body>
+</html>
